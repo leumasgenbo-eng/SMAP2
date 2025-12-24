@@ -27,14 +27,12 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
   };
 
   const currentGradingRemarks = settings.gradingSystemRemarks || {};
-
   const categoryCounts = {
     "Distinction": students.filter(s => s.category === "Distinction").length,
     "Merit": students.filter(s => s.category === "Merit").length,
     "Pass": students.filter(s => s.category === "Pass").length,
     "Fail": students.filter(s => s.category === "Fail").length,
   };
-
   const grades = ['A1', 'B2', 'B3', 'C4', 'C5', 'C6', 'D7', 'E8', 'F9'];
   const cutoffs = [
       'Score ≥ Mean + 1.645σ', 'Score ≥ Mean + 1.036σ', 'Score ≥ Mean + 0.524σ',
@@ -44,40 +42,27 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
 
   return (
     <div className="bg-white p-4 print:p-0 min-h-screen font-sans">
-      {/* Updated Header Arrangement */}
       <div className="text-center mb-6">
         <h1 className="text-3xl font-black uppercase text-blue-900 mb-1">
           <EditableField value={settings.schoolName} onChange={(v) => onSettingChange('schoolName', v)} className="text-center w-full" />
         </h1>
-        
         <div className="flex justify-center gap-4 text-[10px] font-semibold text-gray-800 mb-2">
-            <div className="flex gap-1">
-               <span>Tel:</span>
-               <EditableField value={settings.schoolContact} onChange={(v) => onSettingChange('schoolContact', v)} placeholder="+233 24 000 0000" />
-            </div>
+            <div className="flex gap-1"><span>Tel:</span><EditableField value={settings.schoolContact} onChange={(v) => onSettingChange('schoolContact', v)} placeholder="+233 24 000 0000" /></div>
             <span>|</span>
-            <div className="flex gap-1">
-               <span>Email:</span>
-               <EditableField value={settings.schoolEmail} onChange={(v) => onSettingChange('schoolEmail', v)} placeholder="school@email.com" />
-            </div>
+            <div className="flex gap-1"><span>Email:</span><EditableField value={settings.schoolEmail} onChange={(v) => onSettingChange('schoolEmail', v)} placeholder="school@email.com" /></div>
         </div>
-
-        <h2 className="text-2xl font-black text-red-700 uppercase tracking-widest leading-tight">
-           <EditableField value={settings.examTitle} onChange={(v) => onSettingChange('examTitle', v)} className="text-center w-full" />
-        </h2>
-
-        <div className="flex justify-center gap-4 text-sm font-bold text-gray-700 uppercase mt-1">
-             <div className="flex items-center gap-1">
-                <span>Term:</span>
-                <EditableField value={settings.termInfo} onChange={(v) => onSettingChange('termInfo', v)} className="w-24 text-center border-b border-gray-400" />
-             </div>
-             <span>|</span>
-             <div className="flex items-center gap-1">
+        <div className="flex justify-center gap-2 text-xl font-black uppercase text-red-700 items-center mt-1 tracking-widest">
+            <EditableField value={settings.examTitle} onChange={(v) => onSettingChange('examTitle', v)} className="text-right" />
+            <span>|</span>
+            <EditableField value={settings.termInfo} onChange={(v) => onSettingChange('termInfo', v)} className="text-center w-24 bg-transparent" />
+            <span>|</span>
+            <div className="flex items-center gap-1 text-sm">
                 <span>Academic Year:</span>
-                <EditableField value={settings.academicYear} onChange={(v) => onSettingChange('academicYear', v)} className="w-32 text-center border-b border-gray-400" />
-             </div>
+                <EditableField value={settings.academicYear} onChange={(v) => onSettingChange('academicYear', v)} className="w-24 text-left" />
+            </div>
         </div>
         <h3 className="text-lg font-bold text-gray-400 uppercase mt-2">MASTER BROAD SHEET</h3>
+        {settings.scienceBaseScore === 140 && <p className="text-[10px] text-blue-600 font-bold">* Science scores are normalized from 140 to 100 for aggregate consistency.</p>}
       </div>
 
       <div className="overflow-x-auto mb-8">
@@ -86,11 +71,7 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
             <tr className="bg-gray-200">
               <th className="border border-gray-400 p-1 sticky left-0 bg-gray-200 z-10 w-10">Pos</th>
               <th className="border border-gray-400 p-1 sticky left-10 bg-gray-200 z-10 min-w-[150px] text-left">Name</th>
-              {subjectList.map(sub => (
-                <th key={sub} className="border border-gray-400 p-1 min-w-[60px]" colSpan={2}>
-                  {sub.substring(0, 10)}...
-                </th>
-              ))}
+              {subjectList.map(sub => (<th key={sub} className="border border-gray-400 p-1 min-w-[60px]" colSpan={2}>{sub.substring(0, 10)}...</th>))}
               <th className="border border-gray-400 p-1 font-bold">Total Score</th>
               <th className="border border-gray-400 p-1 font-bold">Agg. (Best 6)</th>
               <th className="border border-gray-400 p-1">Category</th>
@@ -98,15 +79,8 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
             <tr className="bg-gray-100">
               <th className="border border-gray-400 p-1 sticky left-0 bg-gray-100 z-10"></th>
               <th className="border border-gray-400 p-1 sticky left-10 bg-gray-100 z-10"></th>
-              {subjectList.map(sub => (
-                <React.Fragment key={sub + '-sub'}>
-                  <th className="border border-gray-400 p-1 text-[10px]">Scr</th>
-                  <th className="border border-gray-400 p-1 text-[10px]">Grd</th>
-                </React.Fragment>
-              ))}
-              <th className="border border-gray-400 p-1"></th>
-              <th className="border border-gray-400 p-1"></th>
-              <th className="border border-gray-400 p-1"></th>
+              {subjectList.map(sub => (<React.Fragment key={sub + '-sub'}><th className="border border-gray-400 p-1 text-[10px]">Scr</th><th className="border border-gray-400 p-1 text-[10px]">Grd</th></React.Fragment>))}
+              <th className="border border-gray-400 p-1"></th><th className="border border-gray-400 p-1"></th><th className="border border-gray-400 p-1"></th>
             </tr>
           </thead>
           <tbody>
@@ -116,37 +90,21 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
                 <td className="border border-gray-400 p-1 whitespace-nowrap sticky left-10 bg-white font-bold">{student.name}</td>
                 {subjectList.map(subjectName => {
                   const subData = student.subjects.find(s => s.subject === subjectName);
-                  return (
-                    <React.Fragment key={subjectName}>
-                      <td className="border border-gray-400 p-1 text-center text-gray-500">{subData?.score || '-'}</td>
-                      <td className={`border border-gray-400 p-1 text-center font-semibold ${getGradeColor(subData?.grade || '')}`}>
-                        {subData?.grade || '-'}
-                      </td>
-                    </React.Fragment>
-                  );
+                  return (<React.Fragment key={subjectName}><td className="border border-gray-400 p-1 text-center text-gray-500">{subData?.score || '-'}</td><td className={`border border-gray-400 p-1 text-center font-semibold ${getGradeColor(subData?.grade || '')}`}>{subData?.grade || '-'}</td></React.Fragment>);
                 })}
                 <td className="border border-gray-400 p-1 text-center font-bold bg-gray-100">{student.totalScore}</td>
                 <td className="border border-gray-400 p-1 text-center font-bold bg-blue-50">{student.bestSixAggregate}</td>
                 <td className="border border-gray-400 p-1 text-center text-[10px]">{student.category}</td>
               </tr>
             ))}
-
             <tr className="bg-orange-50 font-semibold border-t-2 border-black">
               <td colSpan={2} className="border border-gray-400 p-2 text-right sticky left-0 bg-orange-50">Class Average:</td>
-              {subjectList.map(sub => (
-                <td key={sub} colSpan={2} className="border border-gray-400 p-1 text-center">
-                  {stats.subjectMeans[sub]?.toFixed(1)}
-                </td>
-              ))}
+              {subjectList.map(sub => (<td key={sub} colSpan={2} className="border border-gray-400 p-1 text-center">{stats.subjectMeans[sub]?.toFixed(1)}</td>))}
               <td colSpan={3} className="border border-gray-400 p-1"></td>
             </tr>
              <tr className="bg-orange-50 font-semibold">
               <td colSpan={2} className="border border-gray-400 p-2 text-right sticky left-0 bg-orange-50">Std Dev:</td>
-              {subjectList.map(sub => (
-                <td key={sub} colSpan={2} className="border border-gray-400 p-1 text-center text-xs text-gray-500">
-                  {stats.subjectStdDevs[sub]?.toFixed(2)}
-                </td>
-              ))}
+              {subjectList.map(sub => (<td key={sub} colSpan={2} className="border border-gray-400 p-1 text-center text-xs text-gray-500">{stats.subjectStdDevs[sub]?.toFixed(2)}</td>))}
               <td colSpan={3} className="border border-gray-400 p-1"></td>
             </tr>
           </tbody>
@@ -157,83 +115,26 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
         <div>
            <h4 className="font-bold border-b-2 border-black mb-2 uppercase">Category Grouping Summary</h4>
            <table className="w-full text-sm border-collapse border border-gray-400">
-             <thead className="bg-gray-100">
-               <tr>
-                 <th className="border border-gray-400 p-2 text-left">Category</th>
-                 <th className="border border-gray-400 p-2 text-center">Aggregate Range</th>
-                 <th className="border border-gray-400 p-2 text-center">No. of Pupils</th>
-               </tr>
-             </thead>
+             <thead className="bg-gray-100"><tr><th className="border border-gray-400 p-2 text-left">Category</th><th className="border border-gray-400 p-2 text-center">Aggregate Range</th><th className="border border-gray-400 p-2 text-center">No. of Pupils</th></tr></thead>
              <tbody>
-               <tr>
-                 <td className="border border-gray-400 p-2 font-bold text-green-700">Distinction</td>
-                 <td className="border border-gray-400 p-2 text-center">06 - 10</td>
-                 <td className="border border-gray-400 p-2 text-center font-bold">{categoryCounts["Distinction"]}</td>
-               </tr>
-               <tr>
-                 <td className="border border-gray-400 p-2 font-bold text-blue-700">Merit</td>
-                 <td className="border border-gray-400 p-2 text-center">11 - 20</td>
-                 <td className="border border-gray-400 p-2 text-center font-bold">{categoryCounts["Merit"]}</td>
-               </tr>
-               <tr>
-                 <td className="border border-gray-400 p-2 font-bold text-yellow-700">Pass</td>
-                 <td className="border border-gray-400 p-2 text-center">21 - 36</td>
-                 <td className="border border-gray-400 p-2 text-center font-bold">{categoryCounts["Pass"]}</td>
-               </tr>
-               <tr>
-                 <td className="border border-gray-400 p-2 font-bold text-red-700">Fail</td>
-                 <td className="border border-gray-400 p-2 text-center">37 +</td>
-                 <td className="border border-gray-400 p-2 text-center font-bold">{categoryCounts["Fail"]}</td>
-               </tr>
+               <tr><td className="border border-gray-400 p-2 font-bold text-green-700">Distinction</td><td className="border border-gray-400 p-2 text-center">06 - 10</td><td className="border border-gray-400 p-2 text-center font-bold">{categoryCounts["Distinction"]}</td></tr>
+               <tr><td className="border border-gray-400 p-2 font-bold text-blue-700">Merit</td><td className="border border-gray-400 p-2 text-center">11 - 20</td><td className="border border-gray-400 p-2 text-center font-bold">{categoryCounts["Merit"]}</td></tr>
+               <tr><td className="border border-gray-400 p-2 font-bold text-yellow-700">Pass</td><td className="border border-gray-400 p-2 text-center">21 - 36</td><td className="border border-gray-400 p-2 text-center font-bold">{categoryCounts["Pass"]}</td></tr>
+               <tr><td className="border border-gray-400 p-2 font-bold text-red-700">Fail</td><td className="border border-gray-400 p-2 text-center">37 +</td><td className="border border-gray-400 p-2 text-center font-bold">{categoryCounts["Fail"]}</td></tr>
              </tbody>
            </table>
         </div>
-
         <div>
            <h4 className="font-bold border-b-2 border-black mb-2 uppercase">Grading System (NRT)</h4>
            <table className="w-full text-xs border-collapse border border-gray-400">
-             <thead>
-               <tr className="bg-gray-100">
-                 <th className="border border-gray-400 p-1">Grade</th>
-                 <th className="border border-gray-400 p-1">Remark (Editable)</th>
-                 <th className="border border-gray-400 p-1">Statistical Cut-off (Mean based)</th>
-               </tr>
-             </thead>
-             <tbody>
-               {grades.map((grade, idx) => (
-                   <tr key={grade}>
-                       <td className="border border-gray-400 p-1 text-center font-bold">{grade}</td>
-                       <td className="border border-gray-400 p-1">
-                           <EditableField 
-                             value={currentGradingRemarks[grade] || ''}
-                             onChange={(v) => handleGradeRemarkChange(grade, v)}
-                             className="w-full text-center"
-                           />
-                       </td>
-                       <td className="border border-gray-400 p-1">{cutoffs[idx]}</td>
-                   </tr>
-               ))}
-             </tbody>
+             <thead><tr className="bg-gray-100"><th className="border border-gray-400 p-1">Grade</th><th className="border border-gray-400 p-1">Remark (Editable)</th><th className="border border-gray-400 p-1">Statistical Cut-off (Mean based)</th></tr></thead>
+             <tbody>{grades.map((grade, idx) => (<tr key={grade}><td className="border border-gray-400 p-1 text-center font-bold">{grade}</td><td className="border border-gray-400 p-1"><EditableField value={currentGradingRemarks[grade] || ''} onChange={(v) => handleGradeRemarkChange(grade, v)} className="w-full text-center" /></td><td className="border border-gray-400 p-1">{cutoffs[idx]}</td></tr>))}</tbody>
            </table>
         </div>
       </div>
-
       <div className="mt-12 flex justify-between items-end no-break-inside">
-        <div className="w-1/3">
-           <p className="font-bold mb-2">Class Teacher Authorization:</p>
-           <div className="border-b border-black w-3/4 h-8 mb-2"></div>
-           <p className="text-sm">Signature & Date</p>
-        </div>
-        <div className="w-1/3 text-right">
-          <p className="font-bold mb-2">Headteacher Authorization:</p>
-          <div className="h-16 mb-2 flex justify-end items-end">
-             <div className="border-b border-black w-3/4"></div>
-          </div>
-          <p className="font-bold uppercase">
-            <EditableField value={settings.headTeacherName} onChange={(v) => onSettingChange('headTeacherName', v)} className="text-right font-bold uppercase w-full" />
-          </p>
-          <p className="text-sm">Signature & Stamp</p>
-        </div>
+        <div className="w-1/3"><p className="font-bold mb-2">Class Teacher Authorization:</p><div className="border-b border-black w-3/4 h-8 mb-2"></div><p className="text-sm">Signature & Date</p></div>
+        <div className="w-1/3 text-right"><p className="font-bold mb-2">Headteacher Authorization:</p><div className="h-16 mb-2 flex justify-end items-end"><div className="border-b border-black w-3/4"></div></div><p className="font-bold uppercase"><EditableField value={settings.headTeacherName} onChange={(v) => onSettingChange('headTeacherName', v)} className="text-right font-bold uppercase w-full" /></p><p className="text-sm">Signature & Stamp</p></div>
       </div>
     </div>
   );

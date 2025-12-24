@@ -33,6 +33,7 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   activeIndicators: DAYCARE_INDICATORS, // Default all active
   customIndicators: [], // Initialize empty
   customSubjects: [], // Initialize empty
+  scienceBaseScore: 100, // Default 100
   staffList: [] // Initialize empty
 };
 
@@ -262,8 +263,9 @@ const App: React.FC = () => {
   }, [activeDept, isEarlyChildhood, settings.activeIndicators, settings.customSubjects]);
 
   const { stats, processedStudents, classAvgAggregate, facilitatorStats } = useMemo(() => {
-    const s = calculateClassStatistics(students, currentSubjectList);
-    const processed = processStudentData(s, students, settings.facilitatorMapping || {}, currentSubjectList, settings.gradingSystemRemarks, settings.staffList);
+    // Pass scienceBaseScore to both statistics and processing logic
+    const s = calculateClassStatistics(students, currentSubjectList, settings.scienceBaseScore);
+    const processed = processStudentData(s, students, settings.facilitatorMapping || {}, currentSubjectList, settings.gradingSystemRemarks, settings.staffList, settings.scienceBaseScore);
     const avgAgg = processed.length > 0 ? processed.reduce((sum, st) => sum + st.bestSixAggregate, 0) / processed.length : 0;
     const fStats = calculateFacilitatorStats(processed);
     return { 
@@ -272,7 +274,7 @@ const App: React.FC = () => {
       classAvgAggregate: avgAgg,
       facilitatorStats: fStats
     };
-  }, [students, settings.facilitatorMapping, currentSubjectList, settings.gradingSystemRemarks, settings.staffList]);
+  }, [students, settings.facilitatorMapping, currentSubjectList, settings.gradingSystemRemarks, settings.staffList, settings.scienceBaseScore]);
 
   const handlePrint = () => {
     window.print();

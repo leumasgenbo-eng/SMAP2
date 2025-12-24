@@ -1,5 +1,4 @@
 
-
 import { CORE_SUBJECTS, DEFAULT_GRADING_REMARKS } from './constants';
 import { ClassStatistics, ProcessedStudent, ComputedSubject, StudentData, FacilitatorStats, StaffMember } from './types';
 
@@ -34,7 +33,6 @@ export const generateSubjectRemark = (score: number): string => {
 };
 
 export const getGradeFromZScore = (score: number, mean: number, stdDev: number, remarksMap: Record<string, string>): { grade: string, value: number, category: string } => {
-  // Prevent division by zero if stdDev is 0
   if (stdDev === 0) return { grade: 'C4', value: 4, category: remarksMap['C4'] || 'Credit' };
 
   const diff = score - mean;
@@ -50,15 +48,27 @@ export const getGradeFromZScore = (score: number, mean: number, stdDev: number, 
   return { grade: 'F9', value: 9, category: remarksMap['F9'] || 'Fail' };
 };
 
-export const calculateClassStatistics = (students: StudentData[], subjectList: string[]): ClassStatistics => {
+export const calculateClassStatistics = (students: StudentData[], subjectList: string[], scienceBaseScore: number = 100): ClassStatistics => {
   const subjectMeans: Record<string, number> = {};
   const subjectStdDevs: Record<string, number> = {};
 
   subjectList.forEach(subject => {
-    const scores = students.map(s => s.scores[subject] || 0);
-    // Filter out 0s if they represent non-entries? No, 0 is a valid score.
-    // However, for stats, we usually only count students taking the subject.
-    // For now, assuming all students take all subjects or 0.
+    const scores = students.map(s => {
+        // Robust statistical calculation: For Science, always attempt to derive from detailed breakdown (A+B)
+        // to ensure Mean and StdDev adjust instantly when the global scienceBaseScore toggle is flipped.
+        if (subject === 'Science' && s.scoreDetails?.['Science']) {
+            const det = s.scoreDetails['Science'];
+            const rawSum = det.sectionA + det.sectionB;
+            if (scienceBaseScore === 140) {
+                // Return normalized 100-point value for NRT statistics
+                return Math.round((rawSum / 140) * 100);
+            }
+            return Math.round(rawSum);
+        }
+        // Fallback for other subjects or legacy entries
+        return s.scores[subject] || 0;
+    });
+    
     const mean = calculateMean(scores);
     const stdDev = calculateStdDev(scores, mean);
     subjectMeans[subject] = mean;
@@ -74,24 +84,34 @@ export const processStudentData = (
     facilitatorMap: Record<string, string>,
     subjectList: string[],
     gradingRemarks: Record<string, string> = DEFAULT_GRADING_REMARKS,
-    staffList: StaffMember[] = []
+    staffList: StaffMember[] = [],
+    scienceBaseScore: number = 100
 ): ProcessedStudent[] => {
   const processed = students.map(student => {
-    let totalScore = 0;
+    let studentTotalNormalizedScore = 0;
     const computedSubjects: ComputedSubject[] = [];
 
-    // 1. Calculate Grades for all subjects
     subjectList.forEach(subject => {
-      const score = student.scores[subject] || 0;
-      totalScore += score;
+      let score = student.scores[subject] || 0;
+      
+      // Dynamic Normalization for Science: Best 6 Aggregate must be consistent across all subjects.
+      if (subject === 'Science' && student.scoreDetails?.['Science']) {
+          const det = student.scoreDetails['Science'];
+          const rawSum = det.sectionA + det.sectionB;
+          if (scienceBaseScore === 140) {
+              score = Math.round((rawSum / 140) * 100); 
+          } else {
+              score = Math.round(rawSum);
+          }
+      }
+
+      studentTotalNormalizedScore += score;
       const mean = stats.subjectMeans[subject];
       const stdDev = stats.subjectStdDevs[subject];
       
-      const { grade, value, category } = getGradeFromZScore(score, mean, stdDev, gradingRemarks);
-      
+      const { grade, value } = getGradeFromZScore(score, mean, stdDev, gradingRemarks);
       const remark = generateSubjectRemark(score); 
       
-      // Resolve Facilitator Name from Staff List or Map
       const staff = staffList.find(s => s.subjects && s.subjects.includes(subject));
       const facilitatorName = staff ? staff.name : (facilitatorMap[subject] || 'TBA');
 
@@ -100,17 +120,15 @@ export const processStudentData = (
         score,
         grade,
         gradeValue: value,
-        remark, // This is the descriptive remark (Outstanding, etc), category is grading remark (Excellent)
+        remark,
         facilitator: facilitatorName,
         zScore: stdDev === 0 ? 0 : (score - mean) / stdDev
       });
     });
 
-    // 2. Separate Core and Electives
     const cores = computedSubjects.filter(s => CORE_SUBJECTS.includes(s.subject));
     const electives = computedSubjects.filter(s => !CORE_SUBJECTS.includes(s.subject));
 
-    // 3. Sort by Grade Value (Ascending is better: 1 is best) then by Score (Descending is better)
     const sortFn = (a: ComputedSubject, b: ComputedSubject) => {
       if (a.gradeValue !== b.gradeValue) return a.gradeValue - b.gradeValue;
       return b.score - a.score;
@@ -126,29 +144,23 @@ export const processStudentData = (
       best4Cores.reduce((sum, s) => sum + s.gradeValue, 0) +
       best2Electives.reduce((sum, s) => sum + s.gradeValue, 0);
 
-    // 4. Determine Category
     let category = "Average";
     if (bestSixAggregate <= 10) category = "Distinction";
     else if (bestSixAggregate <= 20) category = "Merit";
     else if (bestSixAggregate <= 36) category = "Pass";
     else category = "Fail";
 
-    // 5. Weakness Analysis & Remarks Logic
     let combinedOverallRemark = "";
     let weaknessAnalysis = "";
     
-    // If the user has manually edited the final report text on the report card, use that.
     if (student.finalRemark && student.finalRemark.trim() !== "") {
         combinedOverallRemark = student.finalRemark;
-        // We still calculate weakness analysis internally for the "Weakness Analysis" variable if needed elsewhere,
-        // but the main remark text comes from finalRemark.
         const weakSubjects = computedSubjects.filter(s => s.gradeValue >= 7);
         if (weakSubjects.length > 0) {
             const names = weakSubjects.map(s => s.subject).join(", ");
             weaknessAnalysis = `Needs urgent improvement in: ${names}.`;
         }
     } else {
-        // Otherwise, generate it dynamically
         const weakSubjects = computedSubjects.filter(s => s.gradeValue >= 7);
         const sortedByScoreAsc = [...computedSubjects].sort((a, b) => a.score - b.score);
         
@@ -168,12 +180,8 @@ export const processStudentData = (
             });
         }
         const facilitatorRemarksStr = facilitatorRemarksList.length > 0 ? ` [Facilitator Notes: ${facilitatorRemarksList.join("; ")}]` : "";
-
         const generatedPerformanceSummary = `Overall performance is ${category}. ${bestSixAggregate <= 15 ? "Keep up the excellent work!" : "More effort required to improve aggregate."}`;
-
-        // Prefer the manually entered "Overall Remark" from Score Entry (Class Teacher), else use generated summary
         const classTeacherRemark = student.overallRemark || generatedPerformanceSummary;
-        
         combinedOverallRemark = `${weaknessAnalysis}${facilitatorRemarksStr}\n\n${classTeacherRemark}`;
     }
 
@@ -183,7 +191,7 @@ export const processStudentData = (
       id: student.id,
       name: student.name,
       subjects: computedSubjects,
-      totalScore,
+      totalScore: studentTotalNormalizedScore,
       bestSixAggregate,
       bestCoreSubjects: best4Cores,
       bestElectiveSubjects: best2Electives,
@@ -193,8 +201,6 @@ export const processStudentData = (
       category,
       rank: 0,
       attendance: student.attendance || "0",
-      
-      // Pass through Daycare fields
       age: student.age,
       promotedTo: student.promotedTo,
       conduct: student.conduct,
@@ -220,7 +226,7 @@ export const calculateFacilitatorStats = (processedStudents: ProcessedStudent[])
 
   processedStudents.forEach(student => {
     student.subjects.forEach(sub => {
-      const key = `${sub.facilitator}||${sub.subject}`; // Unique key for facilitator+subject
+      const key = `${sub.facilitator}||${sub.subject}`; 
       if (!statsMap[key]) {
         statsMap[key] = {
           facilitatorName: sub.facilitator,
@@ -243,14 +249,11 @@ export const calculateFacilitatorStats = (processedStudents: ProcessedStudent[])
 
   return Object.values(statsMap).map(stat => {
     const avg = stat.studentCount > 0 ? stat.totalGradeValue / stat.studentCount : 0;
-    
-    // New Formula: [1 - (TotalValue / (Pupils * 9))] * 100
     const totalExpectedValue = stat.studentCount * 9;
     const percentage = totalExpectedValue > 0 
         ? (1 - (stat.totalGradeValue / totalExpectedValue)) * 100 
         : 0;
 
-    // Assign a grade based on the percentage
     let perfGrade = 'F9';
     if (percentage >= 80) perfGrade = 'A1';
     else if (percentage >= 70) perfGrade = 'B2';
@@ -267,5 +270,5 @@ export const calculateFacilitatorStats = (processedStudents: ProcessedStudent[])
       performancePercentage: parseFloat(percentage.toFixed(2)),
       performanceGrade: perfGrade
     };
-  }).sort((a, b) => b.performancePercentage - a.performancePercentage); // Sort by percentage descending (higher is better)
+  }).sort((a, b) => b.performancePercentage - a.performancePercentage); 
 };

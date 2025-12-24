@@ -104,6 +104,7 @@ export interface GlobalSettings {
   activeIndicators: string[]; // List of active developmental indicators for Daycare
   customIndicators: string[]; // List of custom created indicators
   customSubjects: string[]; // List of custom subjects added by user
+  scienceBaseScore: number; // 100 or 140
   
   // Staff / Facilitator Management
   staffList: StaffMember[];

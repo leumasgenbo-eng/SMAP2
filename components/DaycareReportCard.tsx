@@ -15,13 +15,11 @@ interface DaycareReportCardProps {
 
 const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings, onSettingChange, onStudentUpdate, schoolClass, totalStudents }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-
   const activeIndicatorsList = settings.activeIndicators || DAYCARE_SKILLS;
 
   const handleSharePDF = async () => {
     setIsGenerating(true);
     const originalElement = document.getElementById(`daycare-report-${student.id}`);
-    
     if (!originalElement) {
       alert("Report element not found.");
       setIsGenerating(false);
@@ -36,7 +34,6 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
     }
 
     const clone = originalElement.cloneNode(true) as HTMLElement;
-
     const replaceInputsWithText = (tagName: string) => {
         const originals = originalElement.querySelectorAll(tagName);
         const clones = clone.querySelectorAll(tagName);
@@ -65,10 +62,8 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
 
     replaceInputsWithText('input');
     replaceInputsWithText('textarea');
-
     const buttons = clone.querySelectorAll('button');
     buttons.forEach(btn => btn.parentElement?.remove());
-    
     clone.style.transform = 'none';
     clone.style.margin = '0';
     clone.style.height = '296mm'; 
@@ -96,13 +91,8 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
         const pdfWorker = window.html2pdf().set(opt).from(clone);
         const pdfBlob = await pdfWorker.output('blob');
         const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
-
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: `${student.name} Report`,
-                text: `Report Card for ${student.name}.`,
-            });
+            await navigator.share({ files: [file], title: `${student.name} Report`, text: `Report Card for ${student.name}.` });
         } else {
             const url = URL.createObjectURL(pdfBlob);
             const a = document.createElement('a');
@@ -123,114 +113,44 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
   };
 
   return (
-    <div 
-        id={`daycare-report-${student.id}`}
-        className="bg-white p-6 max-w-[210mm] mx-auto h-[296mm] border border-gray-200 shadow-sm print:shadow-none print:border-none page-break relative group flex flex-col box-border font-sans"
-    >
-       <div 
-         data-html2canvas-ignore="true" 
-         className="absolute top-2 right-2 flex gap-2 no-print opacity-50 group-hover:opacity-100 transition-opacity z-10"
-        >
-          <button 
-            onClick={handleSharePDF}
-            disabled={isGenerating}
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full shadow-lg flex items-center gap-2 font-bold text-xs"
-          >
+    <div id={`daycare-report-${student.id}`} className="bg-white p-6 max-w-[210mm] mx-auto h-[296mm] border border-gray-200 shadow-sm print:shadow-none print:border-none page-break relative group flex flex-col box-border font-sans">
+       <div data-html2canvas-ignore="true" className="absolute top-2 right-2 flex gap-2 no-print opacity-50 group-hover:opacity-100 transition-opacity z-10">
+          <button onClick={handleSharePDF} disabled={isGenerating} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full shadow-lg flex items-center gap-2 font-bold text-xs">
             {isGenerating ? 'Generating...' : 'Share PDF'}
           </button>
        </div>
 
-       {/* Uniform Header Arrangement */}
        <div className="text-center mb-4">
           <div className="mb-1">
-            <EditableField 
-                value={settings.schoolName} 
-                onChange={(v) => onSettingChange('schoolName', v)} 
-                className="text-center font-black w-full bg-transparent text-3xl text-blue-900 tracking-widest uppercase leading-tight" 
-                multiline
-                rows={1}
-            />
+            <EditableField value={settings.schoolName} onChange={(v) => onSettingChange('schoolName', v)} className="text-center font-black w-full bg-transparent text-3xl text-blue-900 tracking-widest uppercase leading-tight" multiline rows={1} />
           </div>
-
           <div className="flex justify-center gap-4 text-[10px] font-semibold text-gray-800 mb-2">
-            <div className="flex gap-1">
-               <span>Tel:</span>
-               <EditableField value={settings.schoolContact} onChange={(v) => onSettingChange('schoolContact', v)} placeholder="+233 24 000 0000" />
-            </div>
+            <div className="flex gap-1"><span>Tel:</span><EditableField value={settings.schoolContact} onChange={(v) => onSettingChange('schoolContact', v)} placeholder="+233 24 000 0000" /></div>
             <span>|</span>
-            <div className="flex gap-1">
-               <span>Email:</span>
-               <EditableField value={settings.schoolEmail} onChange={(v) => onSettingChange('schoolEmail', v)} placeholder="school@email.com" />
-            </div>
+            <div className="flex gap-1"><span>Email:</span><EditableField value={settings.schoolEmail} onChange={(v) => onSettingChange('schoolEmail', v)} placeholder="school@email.com" /></div>
           </div>
-
-          <h2 className="text-xl font-black text-red-700 uppercase tracking-widest leading-tight">
-            <EditableField 
-                value={settings.examTitle} 
-                onChange={(v) => onSettingChange('examTitle', v)} 
-                className="text-center w-full"
-            />
-          </h2>
-          <div className="text-sm font-bold text-gray-700 mt-1 uppercase flex justify-center gap-3">
-             <EditableField 
-                value={settings.termInfo} 
-                onChange={(v) => onSettingChange('termInfo', v)} 
-                className="w-24 text-center border-b border-gray-400" 
-             />
-             <span>|</span>
-             <div className="flex items-center gap-1">
-                <span>Year:</span>
-                <EditableField 
-                    value={settings.academicYear} 
-                    onChange={(v) => onSettingChange('academicYear', v)} 
-                    className="w-24 text-center border-b border-gray-400" 
-                />
-             </div>
+          <div className="flex justify-center gap-2 text-sm font-black uppercase text-red-700 items-center mt-1 tracking-widest">
+            <EditableField value={settings.examTitle} onChange={(v) => onSettingChange('examTitle', v)} className="text-right" />
+            <span>|</span>
+            <EditableField value={settings.termInfo} onChange={(v) => onSettingChange('termInfo', v)} className="w-20 text-center bg-transparent" />
+            <span>|</span>
+            <div className="flex items-center gap-1">
+                <span>Academic Year:</span>
+                <EditableField value={settings.academicYear} onChange={(v) => onSettingChange('academicYear', v)} className="w-24 text-left" />
+            </div>
           </div>
        </div>
 
-       {/* Particulars (Grid Layout as requested) */}
        <div className="grid grid-cols-2 gap-x-8 gap-y-2 mb-4 text-sm font-semibold border-b-2 border-gray-800 pb-4">
-          <div className="flex items-end gap-2">
-             <span>Name:</span>
-             <span className="flex-1 border-b border-dotted border-gray-600 uppercase text-blue-900">{student.name}</span>
-          </div>
-          <div className="flex items-end gap-2">
-             <span>Age:</span>
-             <EditableField 
-                value={student.age || ""} 
-                onChange={(v) => onStudentUpdate(student.id, 'age', v)} 
-                className="w-16 text-center border-b border-dotted border-gray-600" 
-             />
-          </div>
-          <div className="flex items-end gap-2">
-             <span>No. on Roll:</span>
-             <span className="flex-1 border-b border-dotted border-gray-600">{totalStudents}</span>
-          </div>
-          <div className="flex items-end gap-2">
-             <span>Vacation Date:</span>
-             <EditableField value={settings.endDate} onChange={(v) => onSettingChange('endDate', v)} className="flex-1 border-b border-dotted border-gray-600" />
-          </div>
-          <div className="flex items-end gap-2">
-             <span>Next Term Begins:</span>
-             <EditableField value={settings.nextTermBegin} onChange={(v) => onSettingChange('nextTermBegin', v)} className="flex-1 border-b border-dotted border-gray-600" />
-          </div>
-          <div className="flex items-end gap-2">
-             <span>Attendance:</span>
-             <div className="flex items-center border-b border-dotted border-gray-600 px-2">
-                  <EditableField 
-                      value={student.attendance || "0"} 
-                      onChange={(v) => onStudentUpdate(student.id, 'attendance', v)}
-                      className="w-8 text-center" 
-                  />
-                  <span> / </span>
-                  <EditableField value={settings.attendanceTotal} onChange={(v) => onSettingChange('attendanceTotal', v)} className="w-8 text-center" />
-             </div>
-          </div>
+          <div className="flex items-end gap-2"><span>Name:</span><span className="flex-1 border-b border-dotted border-gray-600 uppercase text-blue-900">{student.name}</span></div>
+          <div className="flex items-end gap-2"><span>Age:</span><EditableField value={student.age || ""} onChange={(v) => onStudentUpdate(student.id, 'age', v)} className="w-16 text-center border-b border-dotted border-gray-600" /></div>
+          <div className="flex items-end gap-2"><span>No. on Roll:</span><span className="flex-1 border-b border-dotted border-gray-600">{totalStudents}</span></div>
+          <div className="flex items-end gap-2"><span>Vacation Date:</span><EditableField value={settings.endDate} onChange={(v) => onSettingChange('endDate', v)} className="flex-1 border-b border-dotted border-gray-600" /></div>
+          <div className="flex items-end gap-2"><span>Next Term Begins:</span><EditableField value={settings.nextTermBegin} onChange={(v) => onSettingChange('nextTermBegin', v)} className="flex-1 border-b border-dotted border-gray-600" /></div>
+          <div className="flex items-end gap-2"><span>Attendance:</span><div className="flex items-center border-b border-dotted border-gray-600 px-2"><EditableField value={student.attendance || "0"} onChange={(v) => onStudentUpdate(student.id, 'attendance', v)} className="w-8 text-center" /><span> / </span><EditableField value={settings.attendanceTotal} onChange={(v) => onSettingChange('attendanceTotal', v)} className="w-8 text-center" /></div></div>
        </div>
 
        <h3 className="text-center font-bold uppercase mb-2 bg-blue-100 p-1 border border-blue-200">Skill Achievement(s) Remarks</h3>
-
        <div className="flex-1 border border-gray-800 mb-4 flex flex-col">
            <div className="flex bg-gray-200 font-bold text-xs uppercase border-b border-gray-800">
                <div className="flex-1 p-2 border-r border-gray-600">Learning Areas / Skills</div>
@@ -238,100 +158,39 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
                <div className="w-10 p-2 text-center border-r border-gray-600 bg-gray-100" title="Achieved">A</div>
                <div className="w-10 p-2 text-center bg-gray-300" title="Advanced">A+</div>
            </div>
-
            {student.subjects.map(sub => {
                const { grade, remark } = getDaycareGrade(sub.score);
                return (
                    <div key={sub.subject} className="flex border-b border-gray-400 text-xs">
-                       <div className="flex-1 p-2 border-r border-gray-600 font-bold uppercase">
-                           {sub.subject}
-                           <span className="block font-normal italic text-[10px] text-gray-500">{remark}</span>
-                       </div>
-                        <div className="w-10 p-2 text-center border-r border-gray-600 flex justify-center items-center">
-                            {grade === 'B' ? '✔' : ''}
-                        </div>
-                        <div className="w-10 p-2 text-center border-r border-gray-600 flex justify-center items-center">
-                            {grade === 'S' ? '✔' : ''}
-                        </div>
-                        <div className="w-10 p-2 text-center flex justify-center items-center">
-                            {grade === 'G' ? '✔' : ''}
-                        </div>
+                       <div className="flex-1 p-2 border-r border-gray-600 font-bold uppercase">{sub.subject}<span className="block font-normal italic text-[10px] text-gray-500">{remark}</span></div>
+                        <div className="w-10 p-2 text-center border-r border-gray-600 flex justify-center items-center">{grade === 'B' ? '✔' : ''}</div>
+                        <div className="w-10 p-2 text-center border-r border-gray-600 flex justify-center items-center">{grade === 'S' ? '✔' : ''}</div>
+                        <div className="w-10 p-2 text-center flex justify-center items-center">{grade === 'G' ? '✔' : ''}</div>
                    </div>
                );
            })}
-
-           <div className="bg-gray-100 p-1 font-bold text-xs border-b border-gray-400 text-center uppercase mt-2">
-               Assessment on Social, Physical and Cultural Development
-           </div>
-
+           <div className="bg-gray-100 p-1 font-bold text-xs border-b border-gray-400 text-center uppercase mt-2">Assessment on Social, Physical and Cultural Development</div>
            {activeIndicatorsList.map(skill => {
                const rating = student.skills?.[skill];
                return (
                     <div key={skill} className="flex border-b border-gray-400 text-xs last:border-0">
                        <div className="flex-1 p-1 pl-2 border-r border-gray-600 uppercase">{skill}</div>
-                       <div className="w-10 p-1 text-center border-r border-gray-600 flex justify-center items-center font-bold">
-                           {rating === 'D' ? '✔' : ''}
-                       </div>
-                       <div className="w-10 p-1 text-center border-r border-gray-600 flex justify-center items-center font-bold">
-                           {rating === 'A' ? '✔' : ''}
-                       </div>
-                       <div className="w-10 p-1 text-center flex justify-center items-center font-bold">
-                           {rating === 'A+' ? '✔' : ''}
-                       </div>
+                       <div className="w-10 p-1 text-center border-r border-gray-600 flex justify-center items-center font-bold">{rating === 'D' ? '✔' : ''}</div>
+                       <div className="w-10 p-1 text-center border-r border-gray-600 flex justify-center items-center font-bold">{rating === 'A' ? '✔' : ''}</div>
+                       <div className="w-10 p-1 text-center flex justify-center items-center font-bold">{rating === 'A+' ? '✔' : ''}</div>
                    </div>
                );
            })}
        </div>
 
        <div className="text-xs font-semibold space-y-3">
-           <div className="flex items-center gap-2">
-               <span className="ml-0">PROMOTED TO:</span>
-               <EditableField 
-                    value={student.promotedTo || ""} 
-                    onChange={(v) => onStudentUpdate(student.id, 'promotedTo', v)}
-                    className="flex-1 border-b border-dotted border-gray-600 uppercase" 
-               />
-           </div>
-
-           <div className="flex items-center gap-2">
-               <span>TALENT AND INTEREST:</span>
-               <EditableField 
-                    value={student.interest || ""} 
-                    onChange={(v) => onStudentUpdate(student.id, 'interest', v)}
-                    className="flex-1 border-b border-dotted border-gray-600" 
-               />
-           </div>
-
-           <div className="flex items-center gap-2">
-               <span>CONDUCT:</span>
-               <EditableField 
-                    value={student.conduct || ""} 
-                    onChange={(v) => onStudentUpdate(student.id, 'conduct', v)}
-                    className="flex-1 border-b border-dotted border-gray-600" 
-               />
-           </div>
-
-           <div className="flex items-start gap-2">
-               <span className="whitespace-nowrap">CLASS FACILITATOR’S OVERALL REMARK:</span>
-               <EditableField 
-                    value={student.overallRemark || ""} 
-                    onChange={(v) => onStudentUpdate(student.id, 'finalRemark', v)}
-                    multiline
-                    className="flex-1 border-b border-dotted border-gray-600 leading-tight" 
-               />
-           </div>
-
+           <div className="flex items-center gap-2"><span className="ml-0">PROMOTED TO:</span><EditableField value={student.promotedTo || ""} onChange={(v) => onStudentUpdate(student.id, 'promotedTo', v)} className="flex-1 border-b border-dotted border-gray-600 uppercase" /></div>
+           <div className="flex items-center gap-2"><span>TALENT AND INTEREST:</span><EditableField value={student.interest || ""} onChange={(v) => onStudentUpdate(student.id, 'interest', v)} className="flex-1 border-b border-dotted border-gray-600" /></div>
+           <div className="flex items-center gap-2"><span>CONDUCT:</span><EditableField value={student.conduct || ""} onChange={(v) => onStudentUpdate(student.id, 'conduct', v)} className="flex-1 border-b border-dotted border-gray-600" /></div>
+           <div className="flex items-start gap-2"><span className="whitespace-nowrap">CLASS FACILITATOR’S OVERALL REMARK:</span><EditableField value={student.overallRemark || ""} onChange={(v) => onStudentUpdate(student.id, 'finalRemark', v)} multiline className="flex-1 border-b border-dotted border-gray-600 leading-tight" /></div>
            <div className="flex justify-between items-end mt-8 pt-4">
-               <div className="w-5/12 text-center">
-                   <div className="border-b border-black h-8"></div>
-                   <p>SIGN (C/F)</p>
-               </div>
-               <div className="w-5/12 text-center">
-                   <div className="border-b border-black h-8 flex items-end justify-center">
-                       <EditableField value={settings.headTeacherName} onChange={(v) => onSettingChange('headTeacherName', v)} className="text-center font-bold uppercase w-full" />
-                   </div>
-                   <p>SIGN (H/T)</p>
-               </div>
+               <div className="w-5/12 text-center"><div className="border-b border-black h-8"></div><p>SIGN (C/F)</p></div>
+               <div className="w-5/12 text-center"><div className="border-b border-black h-8 flex items-end justify-center"><EditableField value={settings.headTeacherName} onChange={(v) => onSettingChange('headTeacherName', v)} className="text-center font-bold uppercase w-full" /></div><p>SIGN (H/T)</p></div>
            </div>
        </div>
 
