@@ -15,27 +15,19 @@ interface ReportCardProps {
 
 const ReportCard: React.FC<ReportCardProps> = ({ student, stats, settings, onSettingChange, classAverageAggregate, onStudentUpdate, department, schoolClass }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isEmailing, setIsEmailing] = useState(false);
 
   const sortedSubjects = [...student.subjects].sort((a, b) => b.score - a.score);
   const gradingRemarks = settings.gradingSystemRemarks || {};
   const isJHS = department === 'Junior High School';
   const isMockExam = isJHS && schoolClass === 'Basic 9';
 
-  const handleSharePDF = async () => {
-    setIsGenerating(true);
+  const generatePDFBlob = async () => {
     const originalElement = document.getElementById(`report-${student.id}`);
-    if (!originalElement) {
-      alert("Report element not found.");
-      setIsGenerating(false);
-      return;
-    }
+    if (!originalElement) return null;
 
     // @ts-ignore
-    if (typeof window.html2pdf === 'undefined') {
-        alert("PDF generator library not loaded. Please check your internet connection and refresh the page.");
-        setIsGenerating(false);
-        return;
-    }
+    if (typeof window.html2pdf === 'undefined') return null;
 
     const clone = originalElement.cloneNode(true) as HTMLElement;
     const replaceInputsWithText = (tagName: string) => {
@@ -55,9 +47,6 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, stats, settings, onSet
             div.style.fontWeight = computed.fontWeight;
             div.style.fontSize = computed.fontSize;
             div.style.fontFamily = computed.fontFamily;
-            div.style.letterSpacing = computed.letterSpacing;
-            div.style.lineHeight = computed.lineHeight;
-            div.style.textTransform = computed.textTransform;
             div.style.color = computed.color;
             div.style.width = '100%';
             div.style.display = 'block';
@@ -97,33 +86,95 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, stats, settings, onSet
         // @ts-ignore
         const pdfWorker = window.html2pdf().set(opt).from(clone);
         const pdfBlob = await pdfWorker.output('blob');
-        const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: `${student.name} Report Card`, text: `Please find attached the report card for ${student.name}.` });
-        } else {
-            const url = URL.createObjectURL(pdfBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = url;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-    } catch (error) {
-        console.error("PDF Generation Error:", error);
-        alert("An error occurred while generating the PDF.");
-    } finally {
         document.body.removeChild(container);
-        setIsGenerating(false);
+        return { blob: pdfBlob, filename: opt.filename };
+    } catch (err) {
+        document.body.removeChild(container);
+        return null;
     }
+  };
+
+  const handleSharePDF = async () => {
+    setIsGenerating(true);
+    const result = await generatePDFBlob();
+    if (!result) {
+        alert("Error generating PDF.");
+        setIsGenerating(false);
+        return;
+    }
+
+    const file = new File([result.blob], result.filename, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: `${student.name} Report Card`, text: `Please find attached the report card for ${student.name}.` });
+    } else {
+        const url = URL.createObjectURL(result.blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = result.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    setIsGenerating(false);
+  };
+
+  const handleEmailPDF = async () => {
+      setIsEmailing(true);
+      const recipient = student.guardianEmail || student.email;
+      
+      if (!recipient) {
+          const emailInput = prompt("No email found for this pupil. Please enter the recipient's email address:");
+          if (!emailInput) {
+              setIsEmailing(false);
+              return;
+          }
+          onStudentUpdate(student.id, 'guardianEmail', emailInput);
+      }
+
+      const result = await generatePDFBlob();
+      if (!result) {
+          alert("Error generating PDF.");
+          setIsEmailing(false);
+          return;
+      }
+
+      const file = new File([result.blob], result.filename, { type: 'application/pdf' });
+      
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          // Native share handles email attachments well on supported platforms
+          try {
+              await navigator.share({
+                  files: [file],
+                  title: `${settings.schoolName} - Report Card`,
+                  text: `Dear Guardian,\n\nPlease find attached the ${settings.examTitle} report card for ${student.name}.\n\nBest regards,\nUnited Baylor Academy Management.`
+              });
+          } catch (e) {
+              console.warn("Share failed, falling back to download + alert", e);
+              downloadAndNotify(result.blob, result.filename);
+          }
+      } else {
+          downloadAndNotify(result.blob, result.filename);
+      }
+      setIsEmailing(false);
+  };
+
+  const downloadAndNotify = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    alert(`Browser doesn't support direct emailing with attachments. The PDF (${filename}) has been downloaded. Please manually attach it to an email to: ${student.guardianEmail || student.email}`);
   };
 
   return (
     <div id={`report-${student.id}`} className="bg-white p-4 max-w-[210mm] mx-auto h-[296mm] border border-gray-200 shadow-sm print:shadow-none print:border-none page-break relative group flex flex-col box-border">
        <div data-html2canvas-ignore="true" className="absolute top-2 right-2 flex gap-2 no-print opacity-50 group-hover:opacity-100 transition-opacity z-10">
+          <button onClick={handleEmailPDF} disabled={isEmailing} className={`${isEmailing ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'} text-white px-3 py-1 rounded-full shadow-lg flex items-center gap-2 font-bold text-xs transition-colors`}>
+            {isEmailing ? <span>Processing...</span> : <><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Email Report</>}
+          </button>
           <button onClick={handleSharePDF} disabled={isGenerating} className={`${isGenerating ? 'bg-gray-400' : 'bg-red-600 hover:bg-red-700'} text-white px-3 py-1 rounded-full shadow-lg flex items-center gap-2 font-bold text-xs transition-colors`}>
-            {isGenerating ? <span>Generating...</span> : <><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Share PDF</>}
+            {isGenerating ? <span>Generating...</span> : <><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Save PDF</>}
           </button>
        </div>
 
@@ -180,8 +231,6 @@ const ReportCard: React.FC<ReportCardProps> = ({ student, stats, settings, onSet
           <tbody>
              {sortedSubjects.map(sub => {
                const isScienceNormalized = sub.subject === 'Science' && settings.scienceBaseScore === 140;
-               // Always show normalized score for consistency with aggregate, 
-               // but we can add a indicator if needed.
                return (
                <tr key={sub.subject} className="even:bg-gray-50 text-[11px]">
                  <td className="border border-gray-600 p-1 font-medium">

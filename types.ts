@@ -35,6 +35,8 @@ export interface StudentData {
   guardian?: string;
   contact?: string;
   address?: string;
+  email?: string; // Student or primary contact email
+  guardianEmail?: string; // Secondary contact email
 
   // Daycare Specifics
   age?: string;
@@ -58,6 +60,8 @@ export interface ProcessedStudent {
   category: string;
   rank: number;
   attendance?: string;
+  email?: string;
+  guardianEmail?: string;
 
   // Daycare Specifics (Passed through)
   age?: string;

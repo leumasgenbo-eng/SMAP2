@@ -442,7 +442,9 @@ const GenericModule: React.FC<GenericModuleProps> = ({ department, schoolClass, 
         dob: "", 
         guardian: "", 
         contact: "", 
-        address: "" 
+        address: "",
+        email: "",
+        guardianEmail: ""
     }]);
   };
 
@@ -593,14 +595,14 @@ const GenericModule: React.FC<GenericModuleProps> = ({ department, schoolClass, 
 
   const handleDownload = () => {
       const headers = enrolmentView === 'records' 
-        ? "ID,Name,Gender,DOB,Guardian,Contact,Address"
+        ? "ID,Name,Gender,DOB,Guardian,Contact,Address,Email"
         : `Week ${weekInfo.number},Date: ${weekInfo.start} to ${weekInfo.end}\nID,Name,Gender,Mon,Tue,Wed,Thu,Fri,Week Total,Term Total`;
       
       const csvContent = "data:text/csv;charset=utf-8," 
         + headers + "\n"
         + sortedStudents.map(s => {
             if (enrolmentView === 'records') {
-                return `${s.id},${s.name},${s.gender},${s.dob},${s.guardian},${s.contact},${s.address}`;
+                return `${s.id},${s.name},${s.gender},${s.dob},${s.guardian},${s.contact},${s.address},${s.email}`;
             } else {
                 const att = currentWeekAttendance[s.id] || {};
                 const wkTotal = getWeekRowTotal(s.id);
@@ -1714,7 +1716,6 @@ const GenericModule: React.FC<GenericModuleProps> = ({ department, schoolClass, 
     ) ? getExamColumns() : getColumns();
 
   if (module === 'Pupil Enrolment') {
-      // ... (Existing Enrolment Render - Unchanged)
       return (
         <div className="bg-white p-6 rounded shadow-md min-h-[600px]">
             {/* Header */}
@@ -1781,7 +1782,8 @@ const GenericModule: React.FC<GenericModuleProps> = ({ department, schoolClass, 
                                     <th className="p-2 border min-w-[200px]">Full Name</th>
                                     <th className="p-2 border w-24">Gender</th>
                                     <th className="p-2 border">DOB</th>
-                                    <th className="p-2 border">Guardian</th>
+                                    <th className="p-2 border">Guardian Email</th>
+                                    <th className="p-2 border">Pupil Email</th>
                                     <th className="p-2 border">Contact</th>
                                     <th className="p-2 border">Address</th>
                                 </tr>
@@ -1807,7 +1809,10 @@ const GenericModule: React.FC<GenericModuleProps> = ({ department, schoolClass, 
                                             <EditableField value={student.dob || ''} onChange={(v) => handleStudentChange(student.id, 'dob', v)} placeholder="YYYY-MM-DD" className="w-full" />
                                         </td>
                                         <td className="p-2 border">
-                                            <EditableField value={student.guardian || ''} onChange={(v) => handleStudentChange(student.id, 'guardian', v)} className="w-full" />
+                                            <EditableField value={student.guardianEmail || ''} onChange={(v) => handleStudentChange(student.id, 'guardianEmail', v)} placeholder="parent@email.com" className="w-full text-blue-600 font-medium" />
+                                        </td>
+                                        <td className="p-2 border">
+                                            <EditableField value={student.email || ''} onChange={(v) => handleStudentChange(student.id, 'email', v)} placeholder="student@email.com" className="w-full text-blue-600 font-medium" />
                                         </td>
                                         <td className="p-2 border">
                                             <EditableField value={student.contact || ''} onChange={(v) => handleStudentChange(student.id, 'contact', v)} className="w-full" />

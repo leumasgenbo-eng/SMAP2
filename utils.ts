@@ -201,6 +201,8 @@ export const processStudentData = (
       category,
       rank: 0,
       attendance: student.attendance || "0",
+      email: student.email,
+      guardianEmail: student.guardianEmail,
       age: student.age,
       promotedTo: student.promotedTo,
       conduct: student.conduct,
