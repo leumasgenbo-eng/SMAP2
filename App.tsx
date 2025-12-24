@@ -13,8 +13,8 @@ import { supabase } from './supabaseClient';
 
 const DEFAULT_SETTINGS: GlobalSettings = {
   schoolName: "UNITED BAYLOR ACADEMY",
-  examTitle: "2ND MOCK 2025 BROAD SHEET EXAMINATION",
-  mockSeries: "2",
+  examTitle: "3RD-MOCK",
+  mockSeries: "3",
   mockAnnouncement: "Please ensure all scores are entered accurately. Section A is out of 40, Section B is out of 60.",
   mockDeadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 10 days from now
   submittedSubjects: [],
@@ -26,14 +26,14 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   endDate: "15-02-2025",
   headTeacherName: "HEADMASTER NAME",
   reportDate: new Date().toLocaleDateString(),
-  schoolContact: "+233 24 000 0000",
+  schoolContact: "+233 24 5756734",
   schoolEmail: "info@unitedbaylor.edu.gh",
   facilitatorMapping: FACILITATORS, // Initialize with default constants
   gradingSystemRemarks: DEFAULT_GRADING_REMARKS,
   activeIndicators: DAYCARE_INDICATORS, // Default all active
   customIndicators: [], // Initialize empty
   customSubjects: [], // Initialize empty
-  staffList: [] // Initialize empty, will populate from mapping if needed or start fresh
+  staffList: [] // Initialize empty
 };
 
 const DEPARTMENTS: Department[] = [
@@ -143,7 +143,6 @@ const App: React.FC = () => {
             }
             setSettings(loadedSettings);
         } else if (settingsError && settingsError.code !== 'PGRST116') {
-             // PGRST116 is "Row not found", which is fine for first run
              console.error("Error fetching settings:", JSON.stringify(settingsError));
         }
 
@@ -153,14 +152,12 @@ const App: React.FC = () => {
           .select('payload');
 
         if (studentsData && studentsData.length > 0) {
-            // Map payload back to student objects
             const loadedStudents = studentsData.map((row: any) => row.payload);
             setStudents(loadedStudents);
         } else {
              if (studentsError && studentsError.code !== 'PGRST116') {
                 console.error("Error fetching students:", JSON.stringify(studentsError));
              }
-            // First run? Use Raw Constants
             const initialStudents = RAW_STUDENTS.map(s => ({
                 ...s,
                 scoreDetails: {} 
@@ -183,13 +180,13 @@ const App: React.FC = () => {
 
   // Effect to handle Title Change based on Department and Class context
   useEffect(() => {
+    // Only update if not explicitly overriding or first time
     if (activeDept === 'Lower Basic School' || activeDept === 'Upper Basic School') {
         setSettings(prev => ({
             ...prev,
             examTitle: "END OF TERM EXAMINATION",
         }));
     } else if (activeDept === 'Junior High School') {
-         // Basic 7 and 8 do end of term, Basic 9 does Mock
          if (activeClass === 'Basic 7' || activeClass === 'Basic 8') {
              setSettings(prev => ({
                 ...prev,
@@ -198,7 +195,7 @@ const App: React.FC = () => {
          } else {
              setSettings(prev => ({
                 ...prev,
-                examTitle: "2ND MOCK 2025 BROAD SHEET EXAMINATION",
+                examTitle: "3RD-MOCK",
              }));
          }
     }
@@ -211,17 +208,12 @@ const App: React.FC = () => {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-        // 1. Save Settings
         const { error: settingsError } = await supabase
             .from('settings')
             .upsert({ id: 1, payload: settings });
         
         if (settingsError) throw settingsError;
 
-        // 2. Save Students
-        // We upsert all students. 
-        // Note: If you delete a student in UI, this doesn't strictly delete from DB unless we handle deletions explicitly.
-        // For a simple sync, this usually works for updates/adds.
         const studentRows = students.map(s => ({
             id: s.id,
             payload: s
@@ -242,7 +234,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Sync function passed to Report Cards
   const handleStudentUpdate = (id: number, field: keyof StudentData, value: any) => {
     setStudents(prev => prev.map(s => {
       if (s.id === id) {
@@ -259,32 +250,22 @@ const App: React.FC = () => {
     });
   };
 
-  // Get dynamic subject list for the active department
   const currentSubjectList = useMemo(() => {
       const subjects = getSubjectsForDepartment(activeDept);
       const custom = settings.customSubjects || [];
-      
       let list = [...subjects, ...custom];
-
       if (isEarlyChildhood) {
-          // Include active indicators in the "Subject List" for dropdown purposes if in daycare/nursery/KG
           const indicators = settings.activeIndicators || [];
           list = [...list, ...indicators];
       }
       return list;
   }, [activeDept, isEarlyChildhood, settings.activeIndicators, settings.customSubjects]);
 
-  // Calculate stats and process data
   const { stats, processedStudents, classAvgAggregate, facilitatorStats } = useMemo(() => {
-    // For calculating stats, we should only consider core learning areas, not indicators if they are in the list.
-    // However, the function handles arbitrary keys.
     const s = calculateClassStatistics(students, currentSubjectList);
     const processed = processStudentData(s, students, settings.facilitatorMapping || {}, currentSubjectList, settings.gradingSystemRemarks, settings.staffList);
-    
     const avgAgg = processed.length > 0 ? processed.reduce((sum, st) => sum + st.bestSixAggregate, 0) / processed.length : 0;
-    
     const fStats = calculateFacilitatorStats(processed);
-
     return { 
       stats: s, 
       processedStudents: processed,
@@ -297,29 +278,19 @@ const App: React.FC = () => {
     window.print();
   };
 
-  // Logic to determine if we show the Reporting System
   const isExamDept = true; 
   const showReportingSystem = isExamDept && activeModule === "Examination" && examSubTab === "results";
-  const showGenericModule = !showReportingSystem;
 
-  // Logic for Module Name passing to GenericModule
   const getGenericModuleName = () => {
       if (activeModule === 'Examination') {
-          if (examSubTab === 'timetable') {
-              // Only Daycare and Nursery use Observation labels
-              return isObservationDept ? 'Observation Time Table' as any : 'Examination Time Table' as any;
-          }
+          if (examSubTab === 'timetable') return isObservationDept ? 'Observation Time Table' as any : 'Examination Time Table' as any;
           if (examSubTab === 'invigilators') {
               if (isObservationDept) return 'Observers List' as any;
               if (activeDept === 'Kindergarten') return 'Facilitators List' as any;
               return 'Invigilators List' as any;
           }
-          if (examSubTab === 'indicators') {
-              return 'Indicators List' as any; // Custom internal name
-          }
-          if (examSubTab === 'subjects') {
-              return 'Subject List' as any;
-          }
+          if (examSubTab === 'indicators') return 'Indicators List' as any;
+          if (examSubTab === 'subjects') return 'Subject List' as any;
       }
       return activeModule;
   };
@@ -338,7 +309,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans flex flex-col">
-      {/* 1. Top Level: Department Navigation */}
       <div className="no-print bg-blue-900 text-white shadow-md z-50">
           <div className="flex justify-between items-center px-4 py-3">
             <div className="flex items-center gap-2">
@@ -363,13 +333,12 @@ const App: React.FC = () => {
             </div>
              <div className="flex gap-2">
                  <button onClick={handleSave} className="text-yellow-400 hover:text-yellow-300" title="Save All Data">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2v-4"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                  </button>
             </div>
           </div>
       </div>
 
-      {/* 2. Second Level: Class Navigation */}
       <div className="no-print bg-blue-800 text-white border-b border-blue-900 shadow-inner">
           <div className="px-4 py-1.5 flex gap-2 overflow-x-auto items-center">
               <span className="text-xs font-bold uppercase text-blue-300">Classes:</span>
@@ -389,7 +358,6 @@ const App: React.FC = () => {
           </div>
       </div>
 
-      {/* 3. Third Level: Module Navigation */}
       <div className="no-print bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
           <div className="px-4 py-2 flex gap-4 overflow-x-auto items-center">
               <span className="text-xs font-bold uppercase text-gray-400">Modules:</span>
@@ -409,21 +377,18 @@ const App: React.FC = () => {
           </div>
       </div>
 
-      {/* 4. Sub-Module Navigation for Examination */}
       {isExamDept && activeModule === 'Examination' && (
           <div className="no-print bg-gray-50 border-b border-gray-200 px-4 py-2 flex gap-4 justify-center flex-wrap">
              <button
                 onClick={() => setExamSubTab('timetable')}
                 className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${examSubTab === 'timetable' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
              >
-                {/* Specific Labels: Daycare/Nursery = Observation, Others = Examination */}
                 {isObservationDept ? 'Observation Time Table' : 'Examination Time Table'}
              </button>
              <button
                 onClick={() => setExamSubTab('invigilators')}
                 className={`pb-1 px-4 font-bold text-sm border-b-2 transition-colors ${examSubTab === 'invigilators' ? 'border-blue-600 text-blue-900' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
              >
-                {/* Specific Labels: Daycare/Nursery = Observers, KG = Facilitators, Others = Invigilators */}
                 {isObservationDept ? 'Observers List' : activeDept === 'Kindergarten' ? 'Facilitators List' : 'Invigilators List'}
              </button>
              {isEarlyChildhood && (
@@ -449,7 +414,6 @@ const App: React.FC = () => {
           </div>
       )}
 
-      {/* 5. Main Content Area */}
       {showReportingSystem ? (
         <>
             <div className="no-print bg-blue-50 border-b border-blue-200 p-2 flex justify-between items-center flex-wrap gap-2">
@@ -597,8 +561,8 @@ const App: React.FC = () => {
                 module={getGenericModuleName()} 
                 settings={settings}
                 onSettingChange={handleSettingChange}
-                students={students} // PASSING STUDENTS DOWN FOR SYNC
-                setStudents={setStudents} // PASSING SETTER DOWN
+                students={students} 
+                setStudents={setStudents} 
                />
           </div>
       )}

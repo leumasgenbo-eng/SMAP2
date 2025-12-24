@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ProcessedStudent, GlobalSettings } from '../types';
 import EditableField from './EditableField';
@@ -15,11 +14,9 @@ interface DaycareMasterSheetProps {
 const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, settings, onSettingChange, subjectList }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   
-  // Separate Core Subjects from Indicators for organized display
   const coreSubjects = subjectList.filter(s => DAYCARE_SUBJECTS.includes(s));
   const indicators = subjectList.filter(s => !DAYCARE_SUBJECTS.includes(s));
 
-  // Helper to get first 3 words
   const getShortName = (name: string) => {
       return name.split(/\s+/).slice(0, 3).join(' ');
   };
@@ -41,10 +38,8 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
         return;
     }
 
-    // 1. Clone
     const clone = originalElement.cloneNode(true) as HTMLElement;
 
-    // 2. Replace Inputs
     const replaceInputsWithText = (tagName: string) => {
         const originals = originalElement.querySelectorAll(tagName);
         const clones = clone.querySelectorAll(tagName);
@@ -57,11 +52,7 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
             const div = document.createElement('div');
             div.textContent = originalInput.value;
             div.className = el.className;
-            
-            // Remove interactive classes
             div.classList.remove('hover:bg-yellow-50', 'focus:bg-yellow-100', 'focus:border-blue-500', 'focus:outline-none');
-            
-            // Copy styles
             const computed = window.getComputedStyle(originalInput);
             div.style.textAlign = computed.textAlign;
             div.style.fontWeight = computed.fontWeight;
@@ -70,7 +61,6 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
             div.style.width = '100%';
             div.style.display = 'block';
             div.style.background = 'transparent';
-            
             el.parentNode?.replaceChild(div, el);
         });
     };
@@ -78,15 +68,13 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
     replaceInputsWithText('input');
     replaceInputsWithText('textarea');
 
-    // 3. Prep Clone
     clone.style.transform = 'none';
     clone.style.margin = '0';
     clone.style.padding = '10px';
     clone.style.background = 'white';
-    clone.style.width = '297mm'; // Force A4 Landscape width
+    clone.style.width = '297mm'; 
     clone.style.height = '210mm'; 
 
-    // 4. Container
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.top = '-10000px';
@@ -99,7 +87,7 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
       margin: 5,
       filename: `Early_Childhood_Master_Sheet.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, windowWidth: 1123 }, // 297mm at 96dpi approx
+      html2canvas: { scale: 2, useCORS: true, windowWidth: 1123 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
 
@@ -136,7 +124,6 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
 
   return (
     <div className="bg-white p-4 print:p-0 min-h-screen font-sans text-sm">
-       {/* Share Button */}
        <div className="flex justify-end mb-4 no-print">
           <button 
             onClick={handleSharePDF}
@@ -157,14 +144,34 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
             <h1 className="text-3xl font-bold uppercase text-blue-900">
             <EditableField value={settings.schoolName} onChange={(v) => onSettingChange('schoolName', v)} className="text-center w-full bg-transparent" />
             </h1>
-            <h2 className="text-xl font-semibold uppercase text-red-700">
-            EARLY CHILDHOOD MASTER BROAD SHEET
-            </h2>
-            <div className="flex justify-center gap-2 text-sm font-bold text-gray-600">
-                <span>{settings.academicYear}</span>
+            
+            <div className="flex justify-center gap-4 text-xs font-semibold text-gray-600 mb-2">
+                <div className="flex gap-1">
+                <span>Tel:</span>
+                <EditableField value={settings.schoolContact} onChange={(v) => onSettingChange('schoolContact', v)} placeholder="+233 24 000 0000" />
+                </div>
                 <span>|</span>
-                <span>{settings.termInfo}</span>
+                <div className="flex gap-1">
+                <span>Email:</span>
+                <EditableField value={settings.schoolEmail} onChange={(v) => onSettingChange('schoolEmail', v)} placeholder="school@email.com" />
+                </div>
             </div>
+
+            <h2 className="text-xl font-black text-red-700 uppercase tracking-widest leading-tight">
+               <EditableField value={settings.examTitle} onChange={(v) => onSettingChange('examTitle', v)} className="text-center w-full bg-transparent" />
+            </h2>
+            <div className="flex justify-center gap-4 text-sm font-bold text-gray-700 uppercase mt-1">
+                <div className="flex items-center gap-1">
+                    <span>Year:</span>
+                    <EditableField value={settings.academicYear} onChange={(v) => onSettingChange('academicYear', v)} className="w-24 text-center border-b border-gray-400" />
+                </div>
+                <span>|</span>
+                <div className="flex items-center gap-1">
+                    <span>Term:</span>
+                    <EditableField value={settings.termInfo} onChange={(v) => onSettingChange('termInfo', v)} className="w-24 text-center border-b border-gray-400" />
+                </div>
+            </div>
+            <h3 className="text-lg font-bold text-gray-500 uppercase mt-2">EARLY CHILDHOOD MASTER BROAD SHEET</h3>
         </div>
 
         <div className="overflow-x-auto mb-8 border border-gray-300 shadow-sm rounded">
@@ -175,7 +182,6 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
                 <th className="border border-blue-800 p-2 sticky left-10 bg-blue-900 z-10 min-w-[200px] text-left">Pupil Name</th>
                 <th className="border border-blue-800 p-2 w-16 text-center">Age</th>
                 
-                {/* Core Subjects Header - Vertical */}
                 {coreSubjects.map(sub => (
                     <th key={sub} className="border border-blue-800 p-2 min-w-[50px] text-center bg-blue-800 align-bottom" title={sub}>
                     <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }} className="h-40 flex items-center justify-center mx-auto text-xs leading-none whitespace-nowrap">
@@ -184,7 +190,6 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
                     </th>
                 ))}
 
-                {/* Indicators Header - Vertical */}
                 {indicators.map(ind => (
                     <th key={ind} className="border border-blue-800 p-2 min-w-[35px] text-center bg-blue-700 align-bottom" title={ind}>
                         <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }} className="h-40 flex items-center justify-center mx-auto text-[10px] leading-none whitespace-nowrap">
@@ -204,7 +209,6 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
                     <td className="border-r p-2 font-bold sticky left-10 bg-white shadow-r whitespace-nowrap">{student.name}</td>
                     <td className="border-r p-2 text-center">{student.age || '-'}</td>
 
-                    {/* Core Subjects Scores & Grades */}
                     {coreSubjects.map(sub => {
                     const subData = student.subjects.find(s => s.subject === sub);
                     const score = subData?.score || 0;
@@ -224,7 +228,6 @@ const DaycareMasterSheet: React.FC<DaycareMasterSheetProps> = ({ students, setti
                     );
                     })}
 
-                    {/* Indicator Ratings */}
                     {indicators.map(ind => {
                         const rating = student.skills?.[ind] || '-';
                         let bgClass = '';

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { GlobalSettings, FacilitatorStats } from '../types';
 import { SUBJECT_LIST } from '../constants';
@@ -45,10 +44,8 @@ const FacilitatorDashboard: React.FC<FacilitatorDashboardProps> = ({ stats, sett
         return;
     }
 
-    // 1. Clone
     const clone = originalElement.cloneNode(true) as HTMLElement;
 
-    // 2. Replace Inputs
     const replaceInputsWithText = (tagName: string) => {
         const originals = originalElement.querySelectorAll(tagName);
         const clones = clone.querySelectorAll(tagName);
@@ -61,11 +58,7 @@ const FacilitatorDashboard: React.FC<FacilitatorDashboardProps> = ({ stats, sett
             const div = document.createElement('div');
             div.textContent = originalInput.value;
             div.className = el.className;
-            
-            // Remove interactive classes
             div.classList.remove('hover:bg-yellow-50', 'focus:bg-yellow-100', 'focus:border-blue-500', 'focus:outline-none');
-            
-            // Copy styles
             const computed = window.getComputedStyle(originalInput);
             div.style.textAlign = computed.textAlign;
             div.style.fontWeight = computed.fontWeight;
@@ -74,21 +67,18 @@ const FacilitatorDashboard: React.FC<FacilitatorDashboardProps> = ({ stats, sett
             div.style.width = '100%';
             div.style.display = 'block';
             div.style.background = 'transparent';
-            
             el.parentNode?.replaceChild(div, el);
         });
     };
 
     replaceInputsWithText('input');
 
-    // 3. Prep Clone
     clone.style.transform = 'none';
     clone.style.margin = '0';
     clone.style.padding = '20px';
     clone.style.background = 'white';
-    clone.style.width = '210mm'; // Force A4 width
+    clone.style.width = '210mm'; 
 
-    // 4. Container
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.top = '-10000px';
@@ -138,7 +128,7 @@ const FacilitatorDashboard: React.FC<FacilitatorDashboardProps> = ({ stats, sett
 
   return (
     <div className="bg-white p-6 rounded shadow-md max-w-6xl mx-auto min-h-screen">
-      <div className="mb-6 border-b pb-4 flex justify-between items-center">
+      <div className="mb-6 border-b pb-4 flex justify-between items-center no-print">
         <h2 className="text-2xl font-bold text-blue-900">Facilitator Dashboard</h2>
         <div className="flex gap-4">
             <button 
@@ -165,7 +155,7 @@ const FacilitatorDashboard: React.FC<FacilitatorDashboardProps> = ({ stats, sett
 
       <div id="facilitator-dashboard-print-area">
         <div className="text-center mb-8 border-b-2 border-gray-800 pb-4">
-             <h1 className="text-2xl font-black uppercase text-blue-900">
+             <h1 className="text-2xl font-black uppercase text-blue-900 mb-1">
                 <EditableField 
                     value={settings.schoolName} 
                     onChange={(v) => onSettingChange('schoolName', v)} 
@@ -173,22 +163,49 @@ const FacilitatorDashboard: React.FC<FacilitatorDashboardProps> = ({ stats, sett
                     placeholder="SCHOOL NAME"
                 />
              </h1>
-             <h2 className="text-xl font-bold uppercase text-red-700">Facilitator Performance Analysis Report</h2>
-             <div className="text-sm font-semibold flex justify-center items-center gap-2 mt-2">
-                <span>{settings.examTitle}</span>
-                <span>-</span>
+             
+             <div className="flex justify-center gap-4 text-[10px] font-semibold text-gray-800 mb-2">
+                <div className="flex gap-1">
+                <span>Tel:</span>
+                <EditableField value={settings.schoolContact} onChange={(v) => onSettingChange('schoolContact', v)} placeholder="+233 24 000 0000" />
+                </div>
+                <span>|</span>
+                <div className="flex gap-1">
+                <span>Email:</span>
+                <EditableField value={settings.schoolEmail} onChange={(v) => onSettingChange('schoolEmail', v)} placeholder="school@email.com" />
+                </div>
+            </div>
+
+             <h2 className="text-xl font-black text-red-700 uppercase tracking-widest leading-tight">
+                <EditableField 
+                    value={settings.examTitle} 
+                    onChange={(v) => onSettingChange('examTitle', v)} 
+                    className="text-center font-semibold w-full"
+                />
+             </h2>
+
+             <div className="text-sm font-bold flex justify-center items-center gap-2 mt-1 text-gray-700 uppercase">
                 <EditableField 
                     value={settings.termInfo} 
                     onChange={(v) => onSettingChange('termInfo', v)} 
                     className="text-center w-32 border-b border-gray-400"
                     placeholder="TERM INFO"
                 />
+                <span>|</span>
+                <div className="flex items-center gap-1">
+                    <span>Year:</span>
+                    <EditableField 
+                        value={settings.academicYear} 
+                        onChange={(v) => onSettingChange('academicYear', v)} 
+                        className="w-24 text-center border-b border-gray-400"
+                        placeholder="YEAR"
+                    />
+                </div>
              </div>
+             <h3 className="text-lg font-bold uppercase text-gray-400 mt-2">Facilitator Performance Analysis Report</h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            
-            {/* Facilitator Management */}
             <div className="bg-gray-50 p-4 rounded border">
             <h3 className="text-lg font-bold mb-4 uppercase text-gray-700 border-b pb-2">Facilitator List</h3>
             <div className="space-y-2">
@@ -206,7 +223,6 @@ const FacilitatorDashboard: React.FC<FacilitatorDashboardProps> = ({ stats, sett
             </div>
             </div>
 
-            {/* Performance Overview (Summary) */}
             <div className="bg-blue-50 p-4 rounded border border-blue-100 h-fit">
             <h3 className="text-lg font-bold mb-4 uppercase text-blue-900 border-b border-blue-200 pb-2">Performance Grading Key</h3>
             <div className="text-sm space-y-2">
@@ -227,7 +243,6 @@ const FacilitatorDashboard: React.FC<FacilitatorDashboardProps> = ({ stats, sett
             </div>
         </div>
 
-        {/* Detailed Analysis Table */}
         <div className="mt-8">
             <h3 className="text-xl font-bold mb-4 uppercase text-gray-800">Performance Data Table</h3>
             <div className="overflow-x-auto">

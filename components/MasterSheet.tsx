@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ProcessedStudent, ClassStatistics, GlobalSettings } from '../types';
 import EditableField from './EditableField';
@@ -29,7 +28,6 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
 
   const currentGradingRemarks = settings.gradingSystemRemarks || {};
 
-  // Calculate Category Counts
   const categoryCounts = {
     "Distinction": students.filter(s => s.category === "Distinction").length,
     "Merit": students.filter(s => s.category === "Merit").length,
@@ -45,26 +43,41 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
   ];
 
   return (
-    <div className="bg-white p-4 print:p-0 min-h-screen">
+    <div className="bg-white p-4 print:p-0 min-h-screen font-sans">
+      {/* Updated Header Arrangement */}
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold uppercase">
+        <h1 className="text-3xl font-black uppercase text-blue-900 mb-1">
           <EditableField value={settings.schoolName} onChange={(v) => onSettingChange('schoolName', v)} className="text-center w-full" />
         </h1>
-        <div className="flex justify-center gap-4 text-xs font-semibold text-gray-600 mb-2">
+        
+        <div className="flex justify-center gap-4 text-[10px] font-semibold text-gray-800 mb-2">
             <div className="flex gap-1">
                <span>Tel:</span>
-               <EditableField value={settings.schoolContact} onChange={(v) => onSettingChange('schoolContact', v)} placeholder="000-000-0000" />
+               <EditableField value={settings.schoolContact} onChange={(v) => onSettingChange('schoolContact', v)} placeholder="+233 24 000 0000" />
             </div>
             <span>|</span>
             <div className="flex gap-1">
                <span>Email:</span>
                <EditableField value={settings.schoolEmail} onChange={(v) => onSettingChange('schoolEmail', v)} placeholder="school@email.com" />
             </div>
-          </div>
-        <h2 className="text-xl font-semibold uppercase text-gray-700">
+        </div>
+
+        <h2 className="text-2xl font-black text-red-700 uppercase tracking-widest leading-tight">
            <EditableField value={settings.examTitle} onChange={(v) => onSettingChange('examTitle', v)} className="text-center w-full" />
         </h2>
-        <h3 className="text-lg">MASTER BROAD SHEET</h3>
+
+        <div className="flex justify-center gap-4 text-sm font-bold text-gray-700 uppercase mt-1">
+             <div className="flex items-center gap-1">
+                <span>Term:</span>
+                <EditableField value={settings.termInfo} onChange={(v) => onSettingChange('termInfo', v)} className="w-24 text-center border-b border-gray-400" />
+             </div>
+             <span>|</span>
+             <div className="flex items-center gap-1">
+                <span>Academic Year:</span>
+                <EditableField value={settings.academicYear} onChange={(v) => onSettingChange('academicYear', v)} className="w-32 text-center border-b border-gray-400" />
+             </div>
+        </div>
+        <h3 className="text-lg font-bold text-gray-400 uppercase mt-2">MASTER BROAD SHEET</h3>
       </div>
 
       <div className="overflow-x-auto mb-8">
@@ -100,7 +113,7 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
             {students.map((student) => (
               <tr key={student.id} className="hover:bg-gray-50">
                 <td className="border border-gray-400 p-1 text-center font-bold sticky left-0 bg-white">{student.rank}</td>
-                <td className="border border-gray-400 p-1 whitespace-nowrap sticky left-10 bg-white">{student.name}</td>
+                <td className="border border-gray-400 p-1 whitespace-nowrap sticky left-10 bg-white font-bold">{student.name}</td>
                 {subjectList.map(subjectName => {
                   const subData = student.subjects.find(s => s.subject === subjectName);
                   return (
@@ -118,7 +131,6 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
               </tr>
             ))}
 
-            {/* Averages Row */}
             <tr className="bg-orange-50 font-semibold border-t-2 border-black">
               <td colSpan={2} className="border border-gray-400 p-2 text-right sticky left-0 bg-orange-50">Class Average:</td>
               {subjectList.map(sub => (
@@ -128,7 +140,6 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
               ))}
               <td colSpan={3} className="border border-gray-400 p-1"></td>
             </tr>
-             {/* Std Dev Row */}
              <tr className="bg-orange-50 font-semibold">
               <td colSpan={2} className="border border-gray-400 p-2 text-right sticky left-0 bg-orange-50">Std Dev:</td>
               {subjectList.map(sub => (
@@ -142,9 +153,7 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
         </table>
       </div>
 
-      {/* Analysis Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 page-break-inside-avoid">
-        {/* Category Summary */}
         <div>
            <h4 className="font-bold border-b-2 border-black mb-2 uppercase">Category Grouping Summary</h4>
            <table className="w-full text-sm border-collapse border border-gray-400">
@@ -180,7 +189,6 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
            </table>
         </div>
 
-        {/* Grading System Key */}
         <div>
            <h4 className="font-bold border-b-2 border-black mb-2 uppercase">Grading System (NRT)</h4>
            <table className="w-full text-xs border-collapse border border-gray-400">
@@ -210,7 +218,6 @@ const MasterSheet: React.FC<MasterSheetProps> = ({ students, stats, settings, on
         </div>
       </div>
 
-      {/* Footer / Signatures */}
       <div className="mt-12 flex justify-between items-end no-break-inside">
         <div className="w-1/3">
            <p className="font-bold mb-2">Class Teacher Authorization:</p>

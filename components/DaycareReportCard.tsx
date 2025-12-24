@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ProcessedStudent, GlobalSettings, SchoolClass, StudentData } from '../types';
 import EditableField from './EditableField';
@@ -36,7 +35,6 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
         return;
     }
 
-    // Clone and replace inputs for reliable printing (Same logic as standard report)
     const clone = originalElement.cloneNode(true) as HTMLElement;
 
     const replaceInputsWithText = (tagName: string) => {
@@ -68,7 +66,6 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
     replaceInputsWithText('input');
     replaceInputsWithText('textarea');
 
-    // Remove buttons from clone
     const buttons = clone.querySelectorAll('button');
     buttons.forEach(btn => btn.parentElement?.remove());
     
@@ -130,7 +127,6 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
         id={`daycare-report-${student.id}`}
         className="bg-white p-6 max-w-[210mm] mx-auto h-[296mm] border border-gray-200 shadow-sm print:shadow-none print:border-none page-break relative group flex flex-col box-border font-sans"
     >
-       {/* Share Button */}
        <div 
          data-html2canvas-ignore="true" 
          className="absolute top-2 right-2 flex gap-2 no-print opacity-50 group-hover:opacity-100 transition-opacity z-10"
@@ -144,16 +140,53 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
           </button>
        </div>
 
-       {/* Header */}
+       {/* Uniform Header Arrangement */}
        <div className="text-center mb-4">
-          <EditableField 
-             value={settings.schoolName} 
-             onChange={(v) => onSettingChange('schoolName', v)} 
-             className="text-center font-black w-full bg-transparent text-3xl text-blue-900 tracking-widest uppercase leading-tight mb-2" 
-             multiline
-             rows={1}
-          />
-          <h2 className="text-lg font-bold text-red-700 uppercase">STANDARD BASED CURRICULUM, LEARNER’S PERFORMANCE REPORT</h2>
+          <div className="mb-1">
+            <EditableField 
+                value={settings.schoolName} 
+                onChange={(v) => onSettingChange('schoolName', v)} 
+                className="text-center font-black w-full bg-transparent text-3xl text-blue-900 tracking-widest uppercase leading-tight" 
+                multiline
+                rows={1}
+            />
+          </div>
+
+          <div className="flex justify-center gap-4 text-[10px] font-semibold text-gray-800 mb-2">
+            <div className="flex gap-1">
+               <span>Tel:</span>
+               <EditableField value={settings.schoolContact} onChange={(v) => onSettingChange('schoolContact', v)} placeholder="+233 24 000 0000" />
+            </div>
+            <span>|</span>
+            <div className="flex gap-1">
+               <span>Email:</span>
+               <EditableField value={settings.schoolEmail} onChange={(v) => onSettingChange('schoolEmail', v)} placeholder="school@email.com" />
+            </div>
+          </div>
+
+          <h2 className="text-xl font-black text-red-700 uppercase tracking-widest leading-tight">
+            <EditableField 
+                value={settings.examTitle} 
+                onChange={(v) => onSettingChange('examTitle', v)} 
+                className="text-center w-full"
+            />
+          </h2>
+          <div className="text-sm font-bold text-gray-700 mt-1 uppercase flex justify-center gap-3">
+             <EditableField 
+                value={settings.termInfo} 
+                onChange={(v) => onSettingChange('termInfo', v)} 
+                className="w-24 text-center border-b border-gray-400" 
+             />
+             <span>|</span>
+             <div className="flex items-center gap-1">
+                <span>Year:</span>
+                <EditableField 
+                    value={settings.academicYear} 
+                    onChange={(v) => onSettingChange('academicYear', v)} 
+                    className="w-24 text-center border-b border-gray-400" 
+                />
+             </div>
+          </div>
        </div>
 
        {/* Particulars (Grid Layout as requested) */}
@@ -174,10 +207,6 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
              <span>No. on Roll:</span>
              <span className="flex-1 border-b border-dotted border-gray-600">{totalStudents}</span>
           </div>
-           <div className="flex items-end gap-2">
-             <span>Term:</span>
-             <EditableField value={settings.termInfo} onChange={(v) => onSettingChange('termInfo', v)} className="w-24 text-center border-b border-dotted border-gray-600" />
-          </div>
           <div className="flex items-end gap-2">
              <span>Vacation Date:</span>
              <EditableField value={settings.endDate} onChange={(v) => onSettingChange('endDate', v)} className="flex-1 border-b border-dotted border-gray-600" />
@@ -186,13 +215,23 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
              <span>Next Term Begins:</span>
              <EditableField value={settings.nextTermBegin} onChange={(v) => onSettingChange('nextTermBegin', v)} className="flex-1 border-b border-dotted border-gray-600" />
           </div>
+          <div className="flex items-end gap-2">
+             <span>Attendance:</span>
+             <div className="flex items-center border-b border-dotted border-gray-600 px-2">
+                  <EditableField 
+                      value={student.attendance || "0"} 
+                      onChange={(v) => onStudentUpdate(student.id, 'attendance', v)}
+                      className="w-8 text-center" 
+                  />
+                  <span> / </span>
+                  <EditableField value={settings.attendanceTotal} onChange={(v) => onSettingChange('attendanceTotal', v)} className="w-8 text-center" />
+             </div>
+          </div>
        </div>
 
        <h3 className="text-center font-bold uppercase mb-2 bg-blue-100 p-1 border border-blue-200">Skill Achievement(s) Remarks</h3>
 
-       {/* Main Table */}
        <div className="flex-1 border border-gray-800 mb-4 flex flex-col">
-           {/* Header Row */}
            <div className="flex bg-gray-200 font-bold text-xs uppercase border-b border-gray-800">
                <div className="flex-1 p-2 border-r border-gray-600">Learning Areas / Skills</div>
                <div className="w-10 p-2 text-center border-r border-gray-600 bg-white" title="Developing">D</div>
@@ -200,7 +239,6 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
                <div className="w-10 p-2 text-center bg-gray-300" title="Advanced">A+</div>
            </div>
 
-           {/* Subjects (Scores translated to Grades) */}
            {student.subjects.map(sub => {
                const { grade, remark } = getDaycareGrade(sub.score);
                return (
@@ -209,7 +247,6 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
                            {sub.subject}
                            <span className="block font-normal italic text-[10px] text-gray-500">{remark}</span>
                        </div>
-                       {/* Subjects use the G/S/B grading */}
                         <div className="w-10 p-2 text-center border-r border-gray-600 flex justify-center items-center">
                             {grade === 'B' ? '✔' : ''}
                         </div>
@@ -223,12 +260,10 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
                );
            })}
 
-           {/* Divider */}
            <div className="bg-gray-100 p-1 font-bold text-xs border-b border-gray-400 text-center uppercase mt-2">
                Assessment on Social, Physical and Cultural Development
            </div>
 
-           {/* Skills Checklist - Dynamic */}
            {activeIndicatorsList.map(skill => {
                const rating = student.skills?.[skill];
                return (
@@ -248,20 +283,9 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
            })}
        </div>
 
-       {/* Footer Section */}
        <div className="text-xs font-semibold space-y-3">
            <div className="flex items-center gap-2">
-               <span>ATTENDANCE:</span>
-               <div className="flex items-center border-b border-dotted border-gray-600 px-2">
-                    <EditableField 
-                        value={student.attendance || "0"} 
-                        onChange={(v) => onStudentUpdate(student.id, 'attendance', v)}
-                        className="w-8 text-center" 
-                    />
-                    <span> OUT OF </span>
-                    <EditableField value={settings.attendanceTotal} onChange={(v) => onSettingChange('attendanceTotal', v)} className="w-8 text-center" />
-               </div>
-               <span className="ml-4">PROMOTED TO:</span>
+               <span className="ml-0">PROMOTED TO:</span>
                <EditableField 
                     value={student.promotedTo || ""} 
                     onChange={(v) => onStudentUpdate(student.id, 'promotedTo', v)}
@@ -303,13 +327,14 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
                    <p>SIGN (C/F)</p>
                </div>
                <div className="w-5/12 text-center">
-                   <div className="border-b border-black h-8"></div>
+                   <div className="border-b border-black h-8 flex items-end justify-center">
+                       <EditableField value={settings.headTeacherName} onChange={(v) => onSettingChange('headTeacherName', v)} className="text-center font-bold uppercase w-full" />
+                   </div>
                    <p>SIGN (H/T)</p>
                </div>
            </div>
        </div>
 
-       {/* Grading Key Footer */}
        <div className="mt-4 border-t-2 border-gray-800 pt-2 flex justify-between text-[10px] uppercase font-bold text-gray-600">
            <div>Scoring Procedure</div>
            <div>70% to 100% G GOLD (High Proficiency)</div>
@@ -317,7 +342,6 @@ const DaycareReportCard: React.FC<DaycareReportCardProps> = ({ student, settings
            <div>01% to 39% B BRONZE (Approaching Proficiency)</div>
            <div>Absent O Absent</div>
        </div>
-
     </div>
   );
 };
